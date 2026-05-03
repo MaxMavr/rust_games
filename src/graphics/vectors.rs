@@ -1,5 +1,3 @@
-use std::fmt;
-
 #[derive(Clone, Copy, PartialEq)]
 pub struct Vector2 {
     pub x: i32,
@@ -24,6 +22,19 @@ impl Add for Vector2 {
     }
 }
 
+use std::ops::Sub;
+impl Sub for Vector2 {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
+    }
+}
+
+use std::fmt;
 impl fmt::Debug for Vector2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "vec2({}, {})", self.x, self.y)
