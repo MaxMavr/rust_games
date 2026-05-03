@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use crate::graphics::fonts::bdf::{GlyphBDF, FontBDF};
+use crate::graphics::fonts::bdf::errors::BdfError;
 use crate::graphics::vectors::Vector2;
 use crate::graphics::size::Size;
 
@@ -53,11 +54,16 @@ impl FontBuilderBDF {
         self.glyphs.insert(glyph.encoding(), glyph);
     }
 
-    fn require<T>(name: &str, value: Option<T>) -> Result<T, String> {
-        value.ok_or_else(|| format!("BDF Syntax Error: Required font keyword '{}' is missing.", name))
+    fn require<T>(name: &str, value: Option<T>) -> Result<T, BdfError> {
+        value.ok_or_else(|| 
+            return BdfError::syntax(
+                None,
+                format!("Required font keyword '{}' is missing.", name)
+            )
+        )
     }
 
-    pub fn build(self) -> Result<FontBDF, String> { 
+    pub fn build(self) -> Result<FontBDF, BdfError> { 
         FontBDF::new(
             Self::require::<String>("FONT", self.font_name)?,
             Self::require::<Size>("FONTBOUNDINGBOX", self.bounds_size)?,
@@ -108,42 +114,47 @@ impl GlyphBuilderBDF {
         self.bitmap.extend(bitmap);
     }
 
-    fn require<T>(name: &str, start_line: usize, end_line: usize, field_name: &str, field_value: Option<T>) -> Result<T, String> {
-        field_value.ok_or_else(|| format!("BDF Syntax Error in glyph '{}' (lines {}-{}): Required glyph keyword '{}' is missing.",
-        name, start_line, end_line, field_name))
+    fn require<T>(name: &str, start_line: usize, field_name: &str, field_value: Option<T>) -> Result<T, BdfError> {
+        field_value.ok_or_else(|| 
+            BdfError::syntax_in(
+                Some(start_line),
+                format!("glyph '{}'", name),
+                format!("Required glyph keyword '{}' is missing.", field_name)
+            )
+        )
     }
 
-    pub fn build(self, default_advance: Option<Vector2>, name: &str, start_line: usize, end_line: usize,
-    ) -> Result<GlyphBDF, String> {
+    pub fn build(self, default_advance: Option<Vector2>, name: &str, start_line: usize) -> Result<GlyphBDF, BdfError> {
         
         let final_advance = self.advance.or(default_advance)
-            .ok_or_else(|| format!(
-                "BDF Syntax Error in glyph '{}' (lines {}-{}): Glyph is missing DWIDTH, and no font DWIDTH is defined.",
-                name, start_line, end_line
-            ))?;
+            .ok_or_else(|| 
+                BdfError::syntax_in(
+                    Some(start_line),
+                    format!("glyph '{}'", name),
+                    "Glyph is missing DWIDTH, and no font DWIDTH is defined."
+                    )
+                )
+            ?;
 
-
-        let size = Self::require::<Size>(name, start_line, end_line, "BBX", self.size)?;
+        let size = Self::require::<Size>(name, start_line, "BBX", self.size)?;
         let expected_len = ((size.width + 7) / 8) * size.height;
 
         if self.bitmap.len() != expected_len as usize {
-            return Err(format!(
-                "BDF Integrity Error in glyph '{}' (lines {}-{}): Bitmap size mismatch. Expected {} bytes for BBX {}x{}, but got {} bytes.",
-                name,
-                start_line,
-                end_line,
-                expected_len,
-                size.width,
-                size.height,
-                self.bitmap.len()
+            return Err(BdfError::integrity_in(
+                Some(start_line),
+                format!("glyph '{}'", name),
+                format!(
+                    "Bitmap size mismatch. Expected {} bytes for BBX {}x{}, but got {} bytes.",
+                    expected_len, size.width, size.height, self.bitmap.len()
+                )
             ));
         }
         
         Ok(GlyphBDF::new(
-                Self::require::<i32>(name, start_line, end_line, "ENCODING", self.encoding)?,
+                Self::require::<i32>(name, start_line, "ENCODING", self.encoding)?,
                 final_advance,
                 size,
-                Self::require::<Vector2>(name, start_line, end_line, "BBX", self.offset)?,
+                Self::require::<Vector2>(name, start_line, "BBX", self.offset)?,
                 self.bitmap,
             ))
     }
