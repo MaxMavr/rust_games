@@ -1,4 +1,5 @@
 use crate::graphics::rectangles::Rectangle;
+use crate::graphics::size::Size;
 use crate::utils::to_screen_position::ToScreenPosition;
 use crate::vector2;
 
@@ -8,13 +9,12 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    pub fn new(width: usize, height: usize,) -> Self {
-        let pixels = vec![0; width * height];
+    pub fn new(size: Size) -> Self {
+        let pixels = vec![0; size.area() as usize];
         let rectangle = 
-            Rectangle::from_position_width_height(
+            Rectangle::from_top_left(
                 vector2!(0, 0),
-                width as u32,
-                height as u32
+                size
             );
 
         Self {
@@ -38,7 +38,7 @@ impl Buffer {
     pub fn put_pixel<C: ToScreenPosition>(&mut self, coords: C, color: u32) {
         let (x, y) = coords.to_coords();
         
-        if self.rectangle.in_bounds(x as u32, y as u32) {
+        if self.rectangle.in_bounds(x as i32, y as i32) {
             self._put_pixel(x, y, color);
         }
     }

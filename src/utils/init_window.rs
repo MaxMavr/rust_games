@@ -1,6 +1,7 @@
 use minifb::{Window, WindowOptions};
 use display_info::DisplayInfo;
 use crate::utils::pixels_buffer::Buffer;
+use crate::size;
 
 fn make_window(name: &str, width: usize, height: usize) -> Window {
     let mut window = Window::new(
@@ -26,7 +27,7 @@ fn get_screen_size() -> (usize, usize) {
 pub fn init_window(name: &str) -> (Buffer, Window) {
     let (width, height) = get_screen_size();
     let window = make_window(name, width, height);
-    let buffer = Buffer::new(width, height);
+    let buffer = Buffer::new(size!(width as u32, height as u32));
 
     (buffer, window)
 }
