@@ -17,10 +17,7 @@ impl Rectangle {
         let half_w = (size.width as i32) / 2;
         let half_h = (size.height as i32) / 2;
 
-        let top_left = vector2!(
-            center.x - half_w,
-            center.y - half_h
-        );
+        let top_left = vector2!(center.x - half_w, center.y - half_h);
 
         Self { top_left, size }
     }
@@ -34,16 +31,20 @@ impl Rectangle {
             size: Size::new(width, height),
         }
     }
-    
-    pub fn width(&self) -> u32 { self.size.width }
 
-    pub fn height(&self) -> u32 { self.size.height }
+    pub fn width(&self) -> u32 {
+        self.size.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.size.height
+    }
 
     pub fn in_bounds(&self, x: i32, y: i32) -> bool {
-        x >= self.top_left.x 
-        && x < self.top_left.x + self.size.width as i32
-        && y >= self.top_left.y 
-        && y < self.top_left.y + self.size.height as i32
+        x >= self.top_left.x
+            && x < self.top_left.x + self.size.width as i32
+            && y >= self.top_left.y
+            && y < self.top_left.y + self.size.height as i32
     }
 
     pub fn contains(&self, point: Vector2) -> bool {

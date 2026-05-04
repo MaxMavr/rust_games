@@ -1,17 +1,16 @@
-mod extractors;
 mod builders;
+mod extractors;
 
-mod parser;
 mod errors;
+mod parser;
 
+use crate::graphics::size::Size;
+use crate::graphics::vectors::Vector2;
 use errors::BdfError;
 use parser::parse;
-use crate::graphics::vectors::Vector2;
-use crate::graphics::size::Size;
 
 use std::collections::HashMap;
 use std::fs;
-
 
 #[derive(Debug, Clone)]
 pub struct GlyphBDF {
@@ -23,7 +22,13 @@ pub struct GlyphBDF {
 }
 
 impl GlyphBDF {
-    pub fn new(encoding: i32, advance: Vector2, size: Size, offset: Vector2, bitmap: Vec<u8>) -> Self {
+    pub fn new(
+        encoding: i32,
+        advance: Vector2,
+        size: Size,
+        offset: Vector2,
+        bitmap: Vec<u8>,
+    ) -> Self {
         Self {
             encoding,
             advance,
@@ -32,7 +37,7 @@ impl GlyphBDF {
             bitmap,
         }
     }
-    
+
     pub fn encoding(&self) -> i32 {
         self.encoding
     }
@@ -52,30 +57,50 @@ impl GlyphBDF {
     pub fn bitmap(&self) -> &[u8] {
         &self.bitmap
     }
-}
 
+    pub fn get_pixel(&self, x: u32, y: u32) -> bool {
+        if x >= self.size.width || y >= self.size.height {
+            return false;
+        }
+
+        let row_bytes = ((self.size.width + 7) / 8) as usize;
+        let byte_index = (y as usize) * row_bytes + (x as usize / 8);
+        let bit_index = 7 - (x % 8) as u8;
+
+        let byte = self.bitmap.get(byte_index).copied().unwrap_or(0);
+
+        (byte >> bit_index) & 1 == 1
+    }
+}
 
 #[derive(Debug)]
 pub struct FontBDF {
-    name: String,                    // FONT
-    bounds_size: Size,               // BBX
-    bounds_offset: Vector2,          // BBOFF
-    glyphs: HashMap<i32, GlyphBDF>,  // ENCODING -> GlyphBDF
+    name: String,                   // FONT
+    bounds_size: Size,              // BBX
+    bounds_offset: Vector2,         // BBOFF
+    glyphs: HashMap<i32, GlyphBDF>, // ENCODING -> GlyphBDF
 }
 
-
 impl FontBDF {
-    pub fn new(name: String, bounds_size: Size, bounds_offset: Vector2, count_glyphs: usize, glyphs: HashMap<i32, GlyphBDF>) -> Result<Self, BdfError> {
+    pub fn new(
+        name: String,
+        bounds_size: Size,
+        bounds_offset: Vector2,
+        count_glyphs: usize,
+        glyphs: HashMap<i32, GlyphBDF>,
+    ) -> Result<Self, BdfError> {
         if glyphs.len() != count_glyphs {
             return Err(BdfError::integrity_in(
                 None,
                 format!("font '{}'", name),
-                format!("Expected {} glyphs according to 'CHARS' keyword, but found {}.",
-                    count_glyphs, glyphs.len()
-                )
+                format!(
+                    "Expected {} glyphs according to 'CHARS' keyword, but found {}.",
+                    count_glyphs,
+                    glyphs.len()
+                ),
             ));
         }
-        
+
         Ok(Self {
             name,
             bounds_size,

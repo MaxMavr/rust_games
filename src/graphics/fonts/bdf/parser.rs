@@ -1,9 +1,9 @@
+use crate::graphics::fonts::bdf::FontBDF;
 use crate::graphics::fonts::bdf::builders::{FontBuilderBDF, GlyphBuilderBDF};
 use crate::graphics::fonts::bdf::errors::BdfError;
 use crate::graphics::fonts::bdf::extractors::{
     expect_hex_line, expect_n_ints, expect_str, split_line,
 };
-use crate::graphics::fonts::bdf::FontBDF;
 
 use crate::size;
 use crate::vector2;
@@ -22,18 +22,9 @@ struct GlyphState {
     builder: GlyphBuilderBDF,
 }
 
-fn require<T>(keyword: &str, value: Option<T>) -> Result<T, BdfError> {
-    value.ok_or_else(|| 
-        return BdfError::syntax(
-            None,
-            format!("Required font keyword '{}' is missing.", keyword)
-        )
-    )
-}
-
 pub fn parse(data: &str) -> Result<FontBDF, BdfError> {
     let mut font = FontBuilderBDF::new();
-    let mut state = ParserStage ::Idle;
+    let mut state = ParserStage::Idle;
 
     for (i, line) in data.lines().enumerate() {
         let line_number = i + 1;
@@ -42,15 +33,32 @@ pub fn parse(data: &str) -> Result<FontBDF, BdfError> {
         state = match state {
             ParserStage::Idle => parse_idle(line_number, keyword, &values),
             ParserStage::Font => parse_font(line_number, keyword, &values, &mut font)?,
-            ParserStage::Glyph(glyph) => parse_glyph(line_number, line, keyword, &values, glyph, &mut font)?,
+            ParserStage::Glyph(glyph) => {
+                parse_glyph(line_number, line, keyword, &values, glyph, &mut font)?
+            }
             ParserStage::End => break,
         };
     }
 
     match state {
-        ParserStage::Idle => return Err(BdfError::syntax(None, "Required keyword 'STARTFONT' is missing.")),
-        ParserStage::Font => return Err(BdfError::syntax(None, "Required keyword 'ENDFONT' is missing.")),
-        ParserStage::Glyph(_) => return Err(BdfError::syntax(None, "Required keyword 'ENDCHAR' is missing.")),
+        ParserStage::Idle => {
+            return Err(BdfError::syntax(
+                None,
+                "Required keyword 'STARTFONT' is missing.",
+            ));
+        }
+        ParserStage::Font => {
+            return Err(BdfError::syntax(
+                None,
+                "Required keyword 'ENDFONT' is missing.",
+            ));
+        }
+        ParserStage::Glyph(_) => {
+            return Err(BdfError::syntax(
+                None,
+                "Required keyword 'ENDCHAR' is missing.",
+            ));
+        }
         ParserStage::End => font.build(),
     }
 }
@@ -144,11 +152,10 @@ fn parse_glyph(
         }
 
         "ENDCHAR" => {
-            let built = glyph.builder.build(
-                font.default_advance(),
-                &glyph.name,
-                glyph.start_line,
-            )?;
+            let built =
+                glyph
+                    .builder
+                    .build(font.default_advance(), &glyph.name, glyph.start_line)?;
 
             font.insert_glyph(built);
             return Ok(ParserStage::Font);

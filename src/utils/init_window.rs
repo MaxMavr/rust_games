@@ -1,16 +1,13 @@
-use minifb::{Window, WindowOptions};
-use display_info::DisplayInfo;
-use crate::utils::pixels_buffer::Buffer;
 use crate::size;
+use crate::utils::pixels_buffer::Buffer;
+use display_info::DisplayInfo;
+use minifb::{Window, WindowOptions};
 
 fn make_window(name: &str, width: usize, height: usize) -> Window {
-    let mut window = Window::new(
-        name, width, height,
-        WindowOptions::default(),
-    )
-    .unwrap_or_else(|e| {
-        panic!("{}", e);
-    });
+    let mut window =
+        Window::new(name, width, height, WindowOptions::default()).unwrap_or_else(|e| {
+            panic!("{}", e);
+        });
 
     window.set_target_fps(60);
 
