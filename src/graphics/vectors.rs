@@ -34,6 +34,14 @@ impl Sub for Vector2 {
     }
 }
 
+use std::ops::AddAssign;
+impl AddAssign for Vector2 {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
 use std::fmt;
 impl fmt::Debug for Vector2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
