@@ -1,8 +1,8 @@
 <h1 align="center">Игрушки на Расте</h1>
 <p align="center">
 
-<img src="https://img.shields.io/badge/made%20by-MaxMavr-DDDDDD" >
-<img src="https://img.shields.io/badge/version-0.3.1-DDDDDD"><br>
+<img src="https://img.shields.io/badge/made%20by-MaxMavr-E43717">
+<img src="https://img.shields.io/badge/version-0.3.1-E43717"><br>
 </p>
 </p>
 

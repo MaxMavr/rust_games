@@ -54,11 +54,11 @@ impl FontBuilderBDF {
         self.glyphs.insert(glyph.encoding(), glyph);
     }
 
-    fn require<T>(name: &str, value: Option<T>) -> Result<T, BdfError> {
+    fn require<T>(keyword: &str, value: Option<T>) -> Result<T, BdfError> {
         value.ok_or_else(|| 
             return BdfError::syntax(
                 None,
-                format!("Required font keyword '{}' is missing.", name)
+                format!("Required font keyword '{}' is missing.", keyword)
             )
         )
     }
@@ -114,35 +114,34 @@ impl GlyphBuilderBDF {
         self.bitmap.extend(bitmap);
     }
 
-    fn require<T>(name: &str, start_line: usize, field_name: &str, field_value: Option<T>) -> Result<T, BdfError> {
-        field_value.ok_or_else(|| 
+    fn require<T>(glyph_name: &str, start_line: usize, keyword: &str, value: Option<T>) -> Result<T, BdfError> {
+        value.ok_or_else(|| 
             BdfError::syntax_in(
                 Some(start_line),
-                format!("glyph '{}'", name),
-                format!("Required glyph keyword '{}' is missing.", field_name)
+                format!("glyph '{}'", glyph_name),
+                format!("Required glyph keyword '{}' is missing.", keyword)
             )
         )
     }
 
-    pub fn build(self, default_advance: Option<Vector2>, name: &str, start_line: usize) -> Result<GlyphBDF, BdfError> {
-        
+    pub fn build(self, default_advance: Option<Vector2>, glyph_name: &str, start_line: usize) -> Result<GlyphBDF, BdfError> {
         let final_advance = self.advance.or(default_advance)
             .ok_or_else(|| 
                 BdfError::syntax_in(
                     Some(start_line),
-                    format!("glyph '{}'", name),
+                    format!("glyph '{}'", glyph_name),
                     "Glyph is missing DWIDTH, and no font DWIDTH is defined."
                     )
                 )
             ?;
 
-        let size = Self::require::<Size>(name, start_line, "BBX", self.size)?;
+        let size = Self::require::<Size>(glyph_name, start_line, "BBX", self.size)?;
         let expected_len = ((size.width + 7) / 8) * size.height;
 
         if self.bitmap.len() != expected_len as usize {
             return Err(BdfError::integrity_in(
                 Some(start_line),
-                format!("glyph '{}'", name),
+                format!("glyph '{}'", glyph_name),
                 format!(
                     "Bitmap size mismatch. Expected {} bytes for BBX {}x{}, but got {} bytes.",
                     expected_len, size.width, size.height, self.bitmap.len()
@@ -151,10 +150,10 @@ impl GlyphBuilderBDF {
         }
         
         Ok(GlyphBDF::new(
-                Self::require::<i32>(name, start_line, "ENCODING", self.encoding)?,
+                Self::require::<i32>(glyph_name, start_line, "ENCODING", self.encoding)?,
                 final_advance,
                 size,
-                Self::require::<Vector2>(name, start_line, "BBX", self.offset)?,
+                Self::require::<Vector2>(glyph_name, start_line, "BBX", self.offset)?,
                 self.bitmap,
             ))
     }
