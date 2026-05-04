@@ -49,13 +49,17 @@ impl Buffer {
         text: &str,
         font: &FontBDF,
         color: C,
+        multiplier: Vector2,
     ) {
         let target_color = color.to_color();
         let mut cursor_x = start_point.x;
         let mut cursor_y = start_point.y;
 
-        let buf_width = self.rectangle().width();
-        let buf_height = self.rectangle().height();
+        let buf_width = self.rectangle().width() as i32;
+        let buf_height = self.rectangle().height() as i32;
+        
+        let multiplier_x = multiplier.x.max(1);
+        let multiplier_y = multiplier.y.max(1);
 
         for ch in text.chars() {
             if let Some(glyph) = font.get_glyph(ch as i32) {
@@ -68,19 +72,23 @@ impl Buffer {
                 let height = size.height as usize;
 
                 if width == 0 || height == 0 {
-                    cursor_x += advance.x;
-                    cursor_y += advance.y;
+                    cursor_x += advance.x * multiplier_x;
+                    cursor_y += advance.y * multiplier_y;
                     continue;
                 }
 
                 let width_bytes = (width + 7) / 8;
 
-                let start_x = cursor_x + offset.x;
-                let start_y = cursor_y + offset.y;
+                let start_x = cursor_x + offset.x * multiplier_x;
+                let start_y = cursor_y - (offset.y + height as i32) * multiplier_y;
 
                 for row in 0..height {
-                    let screen_y = start_y + row as i32;
-                    if screen_y < 0 || screen_y >= buf_height as i32 {
+                    let screen_y = start_y + row as i32 * multiplier_y;
+
+                    let y0 = screen_y.max(0);
+                    let y1 = (screen_y + multiplier_y).min(buf_height);
+
+                    if y0 >= y1 {
                         continue;
                     }
 
@@ -98,7 +106,7 @@ impl Buffer {
                             continue;
                         }
 
-                        let base_screen_x = start_x + (byte_idx * 8) as i32;
+                        let base_screen_x = start_x + (byte_idx * 8) as i32 * multiplier_x;
 
                         for bit in 0..8 {
                             let col = byte_idx * 8 + bit;
@@ -107,13 +115,20 @@ impl Buffer {
                             }
 
                             if (byte >> (7 - bit)) & 1 != 0 {
-                                let screen_x = base_screen_x + bit as i32;
+                                let screen_x = base_screen_x + bit as i32 * multiplier_x;
+                                
+                                let x0 = screen_x.max(0);
+                                let x1 = (screen_x + multiplier_x).min(buf_width);
 
-                                if screen_x >= 0 && screen_x < buf_width as i32 {
-                                    let idx = ((screen_y * buf_width as i32) + screen_x) as usize;
+                                if x0 >= x1 {
+                                    continue;
+                                }
 
-                                    if let Some(pixel) = self.pixels.get_mut(idx) {
-                                        *pixel = target_color;
+                                for y in y0..y1 {
+                                    let row_start = y * buf_width;
+
+                                    for x in x0..x1 {
+                                        self.pixels[(row_start + x) as usize] = target_color;
                                     }
                                 }
                             }
@@ -121,8 +136,8 @@ impl Buffer {
                     }
                 }
 
-                cursor_x += advance.x;
-                cursor_y += advance.y;
+                cursor_x += advance.x * multiplier_x;
+                cursor_y += advance.y * multiplier_y;
             }
         }
     }
