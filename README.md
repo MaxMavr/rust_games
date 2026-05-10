@@ -53,5 +53,5 @@
 *   **`vectors`** — структура `Vector2` и макрос `vector2!` для удобного создания точек и направлений.
 *   **`size`** — структура `Size` и макрос `size!` для хранения размеров объектов.
 *   **`rectangles`** — структура `Rectangle` для описания областей. Используется для определения границ буфера и проверки коллизий.
-*   **`font_bdf`** — структура `FontBDF` и парсер растровых шрифтов формата [BDF](https://en.wikipedia.org/wiki/Glyph_Bitmap_Distribution_Format). Позволяет подключать готовые гарнитуры, например, из [этой коллекции](https://github.com/Tecate/bitmap-fonts).
+*   **`font_bdf`** — структура `FontBDF` и парсер растровых шрифтов формата [BDF](https://en.wikipedia.org/wiki/Glyph_Bitmap_Distribution_Format). Позволяет подключать готовые гарнитуры, например, из [этой коллекции](https://github.com/Tecate/bitmap-fonts) или по [этому запросу](https://github.com/search?q=bdf%20font&type=repositories).
 *   **`colors`** — палитра часто используемых цветов в формате `u32`.

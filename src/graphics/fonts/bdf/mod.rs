@@ -118,6 +118,10 @@ impl FontBDF {
         &self.name
     }
 
+    pub fn line_height(&self) -> u32 {
+        self.bounds_size.height
+    }
+
     pub fn get_glyph(&self, encoding: i32) -> Option<&GlyphBDF> {
         self.glyphs.get(&encoding)
     }
